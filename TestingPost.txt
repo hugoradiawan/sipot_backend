@@ -1,0 +1,4 @@
+curl "http://localhost:5001/eventplus-9c8f0/asia-southeast2/assignTaskCompleter" -i -X POST -H "Content-Type: application/json" -d "{\"data\":{\"phoneNumberList\":[\"+6285210100025\",\"+62811100025\",\"+6281233444455\"], \"ProjekId\" : \"tennis2021id\"}}"
+
+
+curl "https://asia-southeast2-eventplus-9c8f0.cloudfunctions.net/assignTaskCompleter" -i -X POST -H "Content-Type: application/json" -d "{\"data\":{\"phoneNumberList\":[\"+6285210100025\",\"+62811100025\",\"+6281233444455\"], \"ProjekId\" : \"tennis2021id\"}}"

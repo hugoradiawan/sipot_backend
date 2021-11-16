@@ -1,6 +1,5 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const { UserRecord } = require("firebase-admin/lib/auth/user-record");
 
 admin.initializeApp();
 
@@ -56,14 +55,19 @@ async function createUserWithPhoneNumberAndEmail(data, phoneNumber) {
 }
 
 async function updateAccess(uid, ProjekId, phoneNumber) {
-  return admin.firestore().collection("userData").doc(uid).set({
-    uid: uid,
-    projectId: ProjekId,
-    phoneNumber: phoneNumber,
-    docId: "",
-    displayName: "new TaskCompleter",
-    avatar: "",
-  });
+  const writeResult = await admin
+    .firestore()
+    .collection("userData")
+    .doc(uid)
+    .set({
+      uid: uid,
+      projectId: ProjekId,
+      phoneNumber: phoneNumber,
+      docId: "",
+      displayName: "new TaskCompleter",
+      avatar: "",
+    });
+  return writeResult;
 }
 
 exports.createUserWithPhoneNumberAndEmail = functions
@@ -74,34 +78,34 @@ exports.createUserWithPhoneNumberAndEmail = functions
 // param
 exports.assignTaskCompleter = functions
   .region("asia-southeast2")
-  .https.onCall((data) => {
+  .https.onCall(async (data) => {
     const phoneNumberList = data.phoneNumberList;
     for (let i = 0; i < phoneNumberList.length; i++) {
-      admin
-        .auth()
-        .getUserByPhoneNumber(phoneNumberList[i])
-        .then((userRecord) => {
-          console.log("already exist");
-          updateAccess(userRecord.uid, data.ProjekId, phoneNumberList[i]).then(
-            (writeResult) => {
-              console.log("write Result:", writeResult);
-              console.log("phoneNumber:", phoneNumberList[i]);
-            }
-          );
-        })
-        .catch((error) => {
-          createWithPhoneNumber(data, phoneNumberList[i]).then((userRecord) => {
-            console.log("not exist");
-            updateAccess(
-              userRecord.uid,
-              data.ProjekId,
-              phoneNumberList[i]
-            ).then((writeResult) => {
-              console.log("no PhoneNumber found");
-              console.log("write Result:", writeResult);
-              console.log("phoneNumber:", phoneNumberList[i]);
-            });
-          });
-        });
+      try {
+        const userRecord = await admin
+          .auth()
+          .getUserByPhoneNumber(phoneNumberList[i]);
+        console.log("already exist");
+        const writeResult = await updateAccess(
+          userRecord.uid,
+          data.ProjekId,
+          phoneNumberList[i]
+        );
+        console.log("write Result:", writeResult);
+        console.log("phoneNumber:", phoneNumberList[i]);
+      } catch (error) {
+        const userRecord = await createWithPhoneNumber(
+          data,
+          phoneNumberList[i]
+        );
+        const writeResult = await updateAccess(
+          userRecord.uid,
+          data.ProjekId,
+          phoneNumberList[i]
+        );
+        console.log("no PhoneNumber found");
+        console.log("write Result:", writeResult);
+        console.log("phoneNumber:", phoneNumberList[i]);
+      }
     }
   });
